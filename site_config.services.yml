@@ -1,0 +1,7 @@
+services:
+  plugin.manager.site_config:
+    class: Drupal\site_config\SiteConfigPluginManager
+    parent: default_plugin_manager
+  site_config.service:
+    class: Drupal\site_config\Service\SiteConfigService
+    arguments: ['@plugin.manager.site_config']
