@@ -1,0 +1,17 @@
+langcode: es
+status: true
+dependencies:
+  module:
+    - serialization
+    - site_config_rest
+    - user
+id: site_config_item
+plugin_id: site_config_item
+granularity: resource
+configuration:
+  methods:
+    - GET
+  formats:
+    - json
+  authentication:
+    - cookie

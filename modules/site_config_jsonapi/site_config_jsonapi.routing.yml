@@ -1,0 +1,12 @@
+site_config_jsonapi.config_list:
+  path: '/%jsonapi%/site-config'
+  defaults:
+    _jsonapi_resource: Drupal\site_config_jsonapi\Resource\SiteConfigListResource
+  requirements:
+    _access: 'TRUE'
+site_config_jsonapi.config_item:
+  path: '/%jsonapi%/site-config/{id}'
+  defaults:
+    _jsonapi_resource: Drupal\site_config_jsonapi\Resource\SiteConfigItemResource
+  requirements:
+    _access: 'TRUE'

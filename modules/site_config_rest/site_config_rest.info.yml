@@ -1,0 +1,8 @@
+name: Site Config Rest
+type: module
+description: Provides a Rest resource to expose the stored config.
+package: Custom
+core_version_requirement: ^9 || ^10
+dependencies:
+  - site_config:site_config
+  - drupal:rest

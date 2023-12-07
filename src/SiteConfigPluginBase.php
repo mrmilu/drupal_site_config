@@ -7,8 +7,6 @@ use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Plugin\PluginBase;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\ContentEntityBase;
-use Drupal\Core\Entity\EntityBase;
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -122,7 +120,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
         '#title' => $fieldData['label'] ?? '',
         '#type' => (isset($fieldData['type']) && $this->formElementManager->hasDefinition($fieldData['type'])) ? $fieldData['type'] : 'textfield',
         '#required' => $fieldData['required'] ?? FALSE,
-        '#default_value' => $this->getInternalValue($fieldName),
+        '#default_value' => $this->getValue($fieldName),
       ];
 
       if ($fieldset[$fieldName]['#type'] == 'select') {
@@ -139,13 +137,9 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
   }
 
   /**
-   * Get the stored value for a given field.
-   *
-   * @param $field
-   *
-   * @return mixed
+   * {@inheritdoc}
    */
-  protected function getInternalValue($field): mixed {
+  public function getValue($field): mixed {
     $value = '';
     $key = $this->getConfigKey();
     switch ($this->pluginDefinition['storage']) {
@@ -170,24 +164,6 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
       catch (InvalidPluginDefinitionException|PluginNotFoundException $e) {
         \Drupal::logger('site_config')->error($e->getMessage());
       }
-    }
-
-    return $value;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getValue($field): mixed {
-    $value = $this->getInternalValue($field);
-
-    if ($value instanceof EntityInterface) {
-      $value = [
-        'type' => implode('--', [$value->getEntityTypeId(), $value->bundle()]),
-        'id' => $value->uuid(),
-        'drupal_internal__nid' => $value->id(),
-        'url' => $value->toUrl()->toString(TRUE)->getGeneratedUrl(),
-      ];
     }
 
     return $value;

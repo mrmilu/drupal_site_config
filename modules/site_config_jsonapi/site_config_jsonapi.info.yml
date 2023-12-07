@@ -1,0 +1,9 @@
+name: Site Config Jsonapi
+type: module
+description: Provides a JSONAPI resource to expose the stored config.
+package: Custom
+core_version_requirement: ^9 || ^10
+dependencies:
+  - site_config:site_config
+  - drupal:jsonapi
+  - jsonapi_resources:jsonapi_resources
