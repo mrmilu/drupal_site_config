@@ -2,12 +2,8 @@
 
 namespace Drupal\site_config;
 
-use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
-use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Plugin\PluginBase;
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Entity\ContentEntityBase;
-use Drupal\Core\Entity\EntityTypeManager;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Render\ElementInfoManagerInterface;
@@ -34,18 +30,13 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
    */
   protected State $state;
 
-  /**
-   * @var \Drupal\Core\Entity\EntityTypeManager
-   */
-  protected EntityTypeManager $entityTypeManager;
-
 
   /**
    * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected ConfigFactoryInterface $configFactory;
 
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, $languageManager, $formElementManager, $state, $configFactory, $entityTypeManager) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, $languageManager, $formElementManager, $state, $configFactory) {
     if (!in_array($plugin_definition['storage'], ['status', 'config'])) {
       \Drupal::logger('site_config')
         ->error('The "storage" value must be one of the followings: status, config.');
@@ -56,7 +47,6 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
     $this->formElementManager = $formElementManager;
     $this->state = $state;
     $this->configFactory = $configFactory;
-    $this->entityTypeManager = $entityTypeManager;
   }
 
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
@@ -68,7 +58,6 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
       $container->get('plugin.manager.element_info'),
       $container->get('state'),
       $container->get('config.factory'),
-      $container->get('entity_type.manager'),
     );
   }
 
@@ -119,17 +108,13 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
       $fieldset[$fieldName] = [
         '#title' => $fieldData['label'] ?? '',
         '#type' => (isset($fieldData['type']) && $this->formElementManager->hasDefinition($fieldData['type'])) ? $fieldData['type'] : 'textfield',
-        '#required' => $fieldData['required'] ?? FALSE,
+        '#required' => $fieldData['options'] ?? FALSE,
         '#default_value' => $this->getValue($fieldName),
       ];
 
       if ($fieldset[$fieldName]['#type'] == 'select') {
         $fieldset[$fieldName]['#empty_option'] = t('- Select -');
         $fieldset[$fieldName]['#options'] = $fieldData['options'] ?? $this->getOptions($fieldName);
-      }
-      elseif ($fieldset[$fieldName]['#type'] == 'entity_autocomplete') {
-        $fieldset[$fieldName]['#target_type'] = $fieldData['target_type'] ?? 'node';
-        $fieldset[$fieldName]['#selection_settings'] = $fieldData['selection_settings'] ?? [];
       }
     }
 
@@ -149,21 +134,6 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
       case 'config':
         $value = $this->configFactory->get($key)->get($field);
         break;
-    }
-
-    if (!empty($value) && $this->pluginDefinition['fields'][$field]['type'] == 'entity_autocomplete') {
-      $langCode = $this->languageManager->getCurrentLanguage()->getId();
-      try {
-        $storage = $this->entityTypeManager->getStorage($this->pluginDefinition['fields'][$field]['target_type'] ?? 'node');
-        /** @var ContentEntityBase $value */
-        $value = $storage->load($value);
-        if ($value->hasTranslation($langCode)) {
-          $value = $value->getTranslation($langCode);
-        }
-      }
-      catch (InvalidPluginDefinitionException|PluginNotFoundException $e) {
-        \Drupal::logger('site_config')->error($e->getMessage());
-      }
     }
 
     return $value;
@@ -200,7 +170,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
   /**
    * {@inheritdoc}
    */
-  function getOptions($fieldName): array {
+  protected function getOptions($fieldName): array {
     return [];
   }
 

@@ -2,7 +2,6 @@
 
 namespace Drupal\site_config\Form;
 
-use Drupal\Core\Cache\CacheTagsInvalidator;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -20,27 +19,20 @@ class SettingsForm extends ConfigFormBase {
   protected SiteConfigPluginManager $siteConfigManager;
 
   /**
-   * @var \Drupal\Core\Cache\CacheTagsInvalidator
-   */
-  protected CacheTagsInvalidator $cacheTagsInvalidator;
-
-  /**
    * @var array
    */
   protected array $pluginDefinitions;
 
-  public function __construct(ConfigFactoryInterface $config_factory, $siteConfigManager, $cacheTagsInvalidator) {
+  public function __construct(ConfigFactoryInterface $config_factory, $siteConfigManager) {
     parent::__construct($config_factory);
     $this->siteConfigManager = $siteConfigManager;
     $this->pluginDefinitions = $this->siteConfigManager->getDefinitions();
-    $this->cacheTagsInvalidator = $cacheTagsInvalidator;
   }
 
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
       $container->get('plugin.manager.site_config'),
-      $container->get('cache_tags.invalidator'),
     );
   }
 
@@ -85,7 +77,7 @@ class SettingsForm extends ConfigFormBase {
       }
     }
 
-   $this->cacheTagsInvalidator->invalidateTags(['site:config']);
+   \Drupal::service('cache_tags.invalidator')->invalidateTags(['site:config']);
 
     parent::submitForm($form, $form_state);
   }
