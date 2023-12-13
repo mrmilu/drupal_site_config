@@ -69,12 +69,13 @@ class SiteConfigService {
    *
    * @param $siteKey
    * @param $field
+   * @param $defaultValue
    *
    * @return array|mixed
    */
-  public function getValue($siteKey, $field) {
+  public function getValue($siteKey, $field, $defaultValue = NULL) {
     if (empty($siteKey) || !$this->siteConfigManager->hasDefinition($siteKey)) {
-      return [];
+      return $defaultValue;
     }
     try {
       /** @var \Drupal\site_config\SiteConfigInterface $plugin */
@@ -83,7 +84,7 @@ class SiteConfigService {
     }
     catch (PluginException $e) {
       \Drupal::logger('site_config')->error($e->getMessage());
-      return [];
+      return $defaultValue;
     }
   }
 
