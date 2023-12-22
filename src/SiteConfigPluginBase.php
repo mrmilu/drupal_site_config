@@ -139,7 +139,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
         $fieldset[$fieldName]['#selection_settings'] = $fieldData['selection_settings'] ?? [];
       }
       elseif ($fieldset[$fieldName]['#type'] == 'multivalue') {
-        if ($this->moduleHandler->moduleExists('multivalue_form_element')) {
+        if (!$this->moduleHandler->moduleExists('multivalue_form_element')) {
           unset($fieldset[$fieldName]);
           continue;
         }
