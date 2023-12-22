@@ -67,7 +67,7 @@ abstract class SiteConfigBaseResource extends ResourceBase implements ContainerI
    * {@inheritdoc}
    */
   public function getRouteResourceTypes(Route $route, string $route_name): array {
-    $resource_type = new ResourceType('site_config', 'site_config', NULL);
+    $resource_type = new ResourceType('site_config', 'item', NULL);
     return [$resource_type];
   }
 

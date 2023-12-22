@@ -5,7 +5,7 @@ site_config_jsonapi.config_list:
   requirements:
     _access: 'TRUE'
 site_config_jsonapi.config_item:
-  path: '/%jsonapi%/site-config/{id}'
+  path: '/%jsonapi%/site-config/item/{id}'
   defaults:
     _jsonapi_resource: Drupal\site_config_jsonapi\Resource\SiteConfigItemResource
   requirements:
