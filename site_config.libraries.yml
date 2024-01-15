@@ -1,0 +1,6 @@
+site_config.form:
+  css:
+    theme:
+      css/site_config.form.css: {}
+  dependencies:
+    - core/drupal

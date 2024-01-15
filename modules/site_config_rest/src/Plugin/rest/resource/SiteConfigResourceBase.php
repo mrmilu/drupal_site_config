@@ -5,6 +5,7 @@ namespace Drupal\site_config_rest\Plugin\rest\resource;
 use Drupal\Component\Plugin\DependentPluginInterface;
 use Drupal\Core\Cache\CacheableMetadata;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Language\LanguageInterface;
 use Drupal\rest\Plugin\ResourceBase;
 use Drupal\rest\ResourceResponse;
 use Drupal\site_config\Service\SiteConfigService;
@@ -65,7 +66,7 @@ abstract class SiteConfigResourceBase extends ResourceBase implements DependentP
    */
   public function get(?string $id = NULL) {
     $cacheable_metadata = new CacheableMetadata();
-    $cacheable_metadata->addCacheTags(['site:config']);
+    $cacheable_metadata->addCacheTags(['site:config'])->addCacheContexts(['languages:' . LanguageInterface::TYPE_URL]);
 
     $data = $this->getData($id);
     $this->formatData($data);
