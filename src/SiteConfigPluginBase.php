@@ -123,12 +123,12 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
     ];
 
     foreach ($this->pluginDefinition['fields'] as $fieldName => $fieldData) {
-      $fieldset[$fieldName] = [
-        '#title' => $fieldData['label'] ?? '',
-        '#type' => (isset($fieldData['type']) && $this->formElementManager->hasDefinition($fieldData['type'])) ? $fieldData['type'] : 'textfield',
-        '#required' => $fieldData['required'] ?? FALSE,
-        '#default_value' => $this->getValue($fieldName),
-      ];
+      // Add '#' to all keys of $data to make it a form element.
+      $fieldset[$fieldName] = $this->getArrayFormElement($fieldData);
+      // Check if $data['#label'] is set, if not, use $data['#title'], if not use 'Value'.
+      $fieldset[$fieldName]['#title'] = $fieldset[$fieldName]['#label'] ?? $fieldset[$fieldName]['#title'] ?? t('Value');
+
+      $fieldset[$fieldName]['#default_value'] = $this->getValue($fieldName);
 
       if ($fieldset[$fieldName]['#type'] == 'select') {
         $fieldset[$fieldName]['#empty_option'] = t('- Select -');
@@ -145,8 +145,15 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
         }
         $fields = $fieldData['fields'] ?? ['value' => []];
         foreach ($fields as $key => $data) {
-          $fieldset[$fieldName][$key]['#type'] = $data['type'] ?? 'textfield';
-          $fieldset[$fieldName][$key]['#title'] =  $data['label'] ?? t('Value');
+          // Add '#' to all keys of $data to make it a form element.
+          $data = $this->getArrayFormElement($data);
+          $data['#type'] = $data['#type'] ?? 'textfield';
+
+          // Check if $data['#label'] is set, if not, use $data['#title'], if not use 'Value'.
+          $data['#title'] = $data['#label'] ?? $data['#title'] ?? t('Value');
+
+          // Set field form element.
+          $fieldset[$fieldName][$key] = $data;
         }
         if (empty($fieldset[$fieldName]['#default_value'])) {
           $fieldset[$fieldName]['#default_value'] = [];
@@ -163,6 +170,8 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
   public function getValue($field): mixed {
     $value = '';
     $key = $this->getConfigKey();
+    $langCode = $this->languageManager->getCurrentLanguage()->getId();
+
     switch ($this->pluginDefinition['storage']) {
       case 'status':
         $value = $this->state->get("{$key}.{$field}");
@@ -172,23 +181,49 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
         break;
     }
 
-    if (!empty($value) && $this->pluginDefinition['fields'][$field]['type'] == 'entity_autocomplete') {
-      $langCode = $this->languageManager->getCurrentLanguage()->getId();
-      try {
-        $storage = $this->entityTypeManager->getStorage($this->pluginDefinition['fields'][$field]['target_type'] ?? 'node');
-        /** @var ContentEntityBase $value */
-        $value = $storage->load($value);
-        if ($value->hasTranslation($langCode)) {
-          $value = $value->getTranslation($langCode);
+    if (!empty($value)) {
+      if ($this->pluginDefinition['fields'][$field]['type'] == 'entity_autocomplete') {
+        try {
+          $entity = $this->entityTypeManager->getStorage($this->pluginDefinition['fields'][$field]['target_type'] ?? 'node')->load($value);
+          if ($entity instanceof ContentEntityBase) {
+            $value = $entity;
+            if ($entity->hasTranslation($langCode)) {
+              $value = $value->getTranslation($langCode);
+            }
+          }
+        }
+        catch (InvalidPluginDefinitionException|PluginNotFoundException $e) {
+          \Drupal::logger('site_config')->error($e->getMessage());
         }
       }
-      catch (InvalidPluginDefinitionException|PluginNotFoundException $e) {
-        \Drupal::logger('site_config')->error($e->getMessage());
+
+      if (is_array($value) && $this->pluginDefinition['fields'][$field]['type'] == 'multivalue') {
+        $fields = $this->pluginDefinition['fields'][$field]['fields'];
+        foreach ($value as $key => $value_array) {
+          // Foreach $fields and check if its an autocomplete.
+          foreach ($value_array as $fieldName => $value_config) {
+            if (isset($fields[$fieldName]['type']) &&  $fields[$fieldName]['type'] == 'entity_autocomplete') {
+              try {
+                $entity = $this->entityTypeManager->getStorage($fields[$fieldName]['target_type'] ?? 'node')->load($value_array[$fieldName]) ;
+                if ($entity instanceof ContentEntityBase) {
+                  $value[$key][$fieldName] = $entity;
+                  if ($entity->hasTranslation($langCode)) {
+                    $value[$key][$fieldName] = $entity->getTranslation($langCode);
+                  }
+                }
+              }
+              catch (InvalidPluginDefinitionException|PluginNotFoundException $e) {
+                \Drupal::logger('site_config')->error($e->getMessage());
+              }
+            }
+          }
+        }
       }
     }
 
     return $value;
   }
+
 
   /**
    * {@inheritdoc}
@@ -216,6 +251,19 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
     }
 
     return $values;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getArrayFormElement(array $array): mixed {
+    if (empty($array)) {
+      return [];
+    }
+
+    return array_combine(array_map(function ($k) {
+      return '#' . $k;
+    }, array_keys($array)), $array);
   }
 
   /**

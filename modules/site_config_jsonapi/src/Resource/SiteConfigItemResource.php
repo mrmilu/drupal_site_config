@@ -30,7 +30,26 @@ class SiteConfigItemResource extends SiteConfigBaseResource {
 
 
     $id = $request->attributes->get('id');
-    $values = $this->siteConfigService->getSiteConfigById($id);
+    $config = $this->siteConfigService->getSiteConfigById($id);
+    $instance = $this->siteConfigManager->getDefinitions();
+
+    foreach ($config as $key => $values) {
+      $fields = $instance[$key]['fields'];
+      foreach ($fields as $field => $field_data) {
+        if (isset($values[$field])) {
+          // Set value and field_type.
+          $values[$field] = [
+            'value' => $values[$field],
+            'field_type' => $field_data['type'],
+          ];
+
+          // If  is 'multivalue' field type, add the subfields.
+          if ($field_data['type'] == 'multivalue') {
+            $values[$field]['fields'] = $field_data['fields'];
+          }
+        }
+      }
+    }
 
     if (!empty($values)) {
       $data[] = new ResourceObject(

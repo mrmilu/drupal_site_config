@@ -46,6 +46,16 @@ interface SiteConfigInterface {
   public function getValues(): mixed;
 
   /**
+   * Add '#' to all keys of $data to make it a form element.
+   *
+   * @param array $array
+   *
+   * @return mixed
+   */
+  public function getArrayFormElement(array $array): mixed;
+
+
+  /**
    * Get select options for a field.
    *
    * @param $fieldName
