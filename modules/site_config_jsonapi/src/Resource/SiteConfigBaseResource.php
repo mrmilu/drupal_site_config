@@ -107,7 +107,7 @@ abstract class SiteConfigBaseResource extends ResourceBase implements ContainerI
         case 'multivalue':
           if (isset($value['fields'])) {
             foreach ($value['fields'] as $key => $field) {
-              if ($field['type'] == 'entity_autocomplete') {
+              if (isset($field['type']) && $field['type'] == 'entity_autocomplete') {
                 foreach ($value['value'] as $numeric_key => $field_value) {
                   if ($field_value[$key] instanceof EntityInterface) {
                     $value['value'][$numeric_key][$key] = $this->getFormatEntityValues($field_value[$key]);
