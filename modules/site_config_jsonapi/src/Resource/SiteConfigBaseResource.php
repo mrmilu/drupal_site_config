@@ -99,6 +99,14 @@ abstract class SiteConfigBaseResource extends ResourceBase implements ContainerI
   protected function formatValues(array $values): array {
     foreach ($values as &$value) {
       switch ($value['field_type']) {
+        case 'managed_file':
+          foreach ($value['value'] as $numeric_key => $field_value) {
+            $file = $this->entityTypeManager->getStorage('file')->load($field_value);
+            if ($file instanceof EntityInterface) {
+              $value['value'][$numeric_key] = $this->getFormatEntityValues($file);
+            }
+          }
+          break;
         case 'entity_autocomplete':
           if ($value['value'] instanceof EntityInterface) {
             $value = $this->getFormatEntityValues($value['value']);
