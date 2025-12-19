@@ -130,6 +130,9 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
 
       $fieldset[$fieldName]['#default_value'] = $this->getValue($fieldName);
 
+      if (!isset($fieldset[$fieldName]['#type'])) {
+        continue;
+      }
       if ($fieldset[$fieldName]['#type'] == 'select') {
         $fieldset[$fieldName]['#empty_option'] = t('- Select -');
         $fieldset[$fieldName]['#options'] = $fieldData['options'] ?? $this->getOptions($fieldName);

@@ -36,8 +36,8 @@ class SettingsForm extends ConfigFormBase {
    */
   protected array $pluginDefinitions;
 
-  public function __construct(ConfigFactoryInterface $config_factory, $siteConfigManager, $cacheTagsInvalidator, $blockManager) {
-    parent::__construct($config_factory);
+  public function __construct(ConfigFactoryInterface $config_factory, $typedConfigManager, $siteConfigManager, $cacheTagsInvalidator, $blockManager) {
+    parent::__construct($config_factory, $typedConfigManager);
     $this->siteConfigManager = $siteConfigManager;
     $this->pluginDefinitions = $this->siteConfigManager->getDefinitions();
     $this->cacheTagsInvalidator = $cacheTagsInvalidator;
@@ -47,6 +47,7 @@ class SettingsForm extends ConfigFormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
+      $container->get('config.typed'),
       $container->get('plugin.manager.site_config'),
       $container->get('cache_tags.invalidator'),
       $container->get('plugin.manager.block'),
