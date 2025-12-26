@@ -28,7 +28,6 @@ class SiteConfigItemResource extends SiteConfigBaseResource {
     $cacheable_metadata = new CacheableMetadata();
     $cacheable_metadata->addCacheTags(['site:config'])->addCacheContexts(['languages:' . LanguageInterface::TYPE_URL]);
 
-
     $id = $request->attributes->get('id');
     $config = $this->siteConfigService->getSiteConfigById($id);
     $instance = $this->siteConfigManager->getDefinitions();
@@ -65,4 +64,3 @@ class SiteConfigItemResource extends SiteConfigBaseResource {
   }
 
 }
-

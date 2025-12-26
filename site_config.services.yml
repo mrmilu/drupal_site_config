@@ -4,4 +4,4 @@ services:
     parent: default_plugin_manager
   site_config.service:
     class: Drupal\site_config\Service\SiteConfigService
-    arguments: ['@plugin.manager.site_config']
+    arguments: ['@plugin.manager.site_config', '@logger.factory']

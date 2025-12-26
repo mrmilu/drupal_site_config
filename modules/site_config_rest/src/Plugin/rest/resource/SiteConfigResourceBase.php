@@ -14,12 +14,13 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * SiteConfig resource base.
- *
  */
 abstract class SiteConfigResourceBase extends ResourceBase implements DependentPluginInterface {
 
   /**
-   * @var SiteConfigService
+   * The site config service.
+   *
+   * @var \Drupal\site_config\Service\SiteConfigService
    */
   protected SiteConfigService $siteConfigService;
 
@@ -36,8 +37,10 @@ abstract class SiteConfigResourceBase extends ResourceBase implements DependentP
    *   The available serialization formats.
    * @param \Psr\Log\LoggerInterface $logger
    *   A logger instance.
+   * @param \Drupal\site_config\Service\SiteConfigService $siteConfigService
+   *   The site config service.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, array $serializer_formats, LoggerInterface $logger, $siteConfigService) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, array $serializer_formats, LoggerInterface $logger, SiteConfigService $siteConfigService) {
     parent::__construct($configuration, $plugin_id, $plugin_definition, $serializer_formats, $logger);
     $this->siteConfigService = $siteConfigService;
   }
@@ -77,16 +80,27 @@ abstract class SiteConfigResourceBase extends ResourceBase implements DependentP
     return $response;
   }
 
-  protected abstract function getData(?string $id = NULL): array;
+  /**
+   * Get data.
+   *
+   * @param string|null $id
+   *   The ID.
+   *
+   * @return array
+   *   The data.
+   */
+  abstract protected function getData(?string $id = NULL): array;
 
   /**
    * Format data.
    *
-   * @param $values
+   * @param array $values
+   *   The values to format.
    *
    * @return void
+   *   This method does not return a value.
    */
-  protected function formatData(&$values) {
+  protected function formatData(array &$values) {
     foreach ($values as &$value) {
       if (is_array($value)) {
         $this->formatData($value);

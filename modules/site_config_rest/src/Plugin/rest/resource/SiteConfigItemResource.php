@@ -12,10 +12,12 @@ namespace Drupal\site_config_rest\Plugin\rest\resource;
  *     "canonical" = "/api/site-config/{id}",
  *   }
  * )
- *
  */
 class SiteConfigItemResource extends SiteConfigResourceBase {
 
+  /**
+   * {@inheritdoc}
+   */
   protected function getData(?string $id = NULL): array {
     return $this->siteConfigService->getSiteConfigById($id);
   }

@@ -16,22 +16,30 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class SettingsForm extends ConfigFormBase {
 
   /**
+   * The site config plugin manager.
+   *
    * @var \Drupal\site_config\SiteConfigPluginManager
    */
   protected SiteConfigPluginManager $siteConfigManager;
 
   /**
+   * The cache tags invalidator.
+   *
    * @var \Drupal\Core\Cache\CacheTagsInvalidator
    */
   protected CacheTagsInvalidator $cacheTagsInvalidator;
 
   /**
-   * @var \Drupal\Core\Block\BlockManagerInterface $blockManager
+   * The block manager.
+   *
+   * @var \Drupal\Core\Block\BlockManagerInterface
    */
   protected BlockManagerInterface $blockManager;
 
 
   /**
+   * The plugin definitions.
+   *
    * @var array
    */
   protected array $pluginDefinitions;
@@ -44,6 +52,9 @@ class SettingsForm extends ConfigFormBase {
     $this->blockManager = $blockManager;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('config.factory'),
@@ -105,7 +116,7 @@ class SettingsForm extends ConfigFormBase {
       }
     }
 
-   $this->cacheTagsInvalidator->invalidateTags(['site:config']);
+    $this->cacheTagsInvalidator->invalidateTags(['site:config']);
 
     parent::submitForm($form, $form_state);
   }

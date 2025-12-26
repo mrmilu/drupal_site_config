@@ -23,7 +23,6 @@ interface SiteConfigInterface {
    */
   public function getFormElement(): array;
 
-
   /**
    * Returns the field stored value.
    *
@@ -49,18 +48,22 @@ interface SiteConfigInterface {
    * Add '#' to all keys of $data to make it a form element.
    *
    * @param array $array
+   *   The array to transform.
    *
    * @return mixed
+   *   The transformed array.
    */
   public function getArrayFormElement(array $array): mixed;
-
 
   /**
    * Get select options for a field.
    *
-   * @param $fieldName
+   * @param string $fieldName
+   *   The field name.
    *
    * @return array
+   *   The options array.
    */
-  function getOptions($fieldName): array;
+  public function getOptions(string $fieldName): array;
+
 }

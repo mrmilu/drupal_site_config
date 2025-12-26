@@ -2,6 +2,7 @@
 
 namespace Drupal\site_config;
 
+use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
 use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Plugin\PluginBase;
@@ -20,37 +21,73 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInterface, ContainerFactoryPluginInterface {
 
+  use StringTranslationTrait;
+
   /**
-   * @var \Drupal\Core\Render\ElementInfoManager
+   * The form element manager.
+   *
+   * @var \Drupal\Core\Render\ElementInfoManagerInterface
    */
   protected ElementInfoManagerInterface $formElementManager;
 
   /**
+   * The language manager.
+   *
    * @var \Drupal\Core\Language\LanguageManagerInterface
    */
   protected LanguageManagerInterface $languageManager;
 
   /**
+   * The state service.
+   *
    * @var \Drupal\Core\State\State
    */
   protected State $state;
 
   /**
+   * The entity type manager.
+   *
    * @var \Drupal\Core\Entity\EntityTypeManager
    */
   protected EntityTypeManager $entityTypeManager;
 
   /**
+   * The module handler.
+   *
    * @var \Drupal\Core\Extension\ModuleHandler
    */
   protected ModuleHandler $moduleHandler;
 
   /**
+   * The config factory.
+   *
    * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected ConfigFactoryInterface $configFactory;
 
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, $languageManager, $formElementManager, $state, $configFactory, $entityTypeManager, $moduleHandler) {
+  /**
+   * Constructs a new SiteConfigPluginBase object.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin_id for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   * @param \Drupal\Core\Language\LanguageManagerInterface $languageManager
+   *   The language manager.
+   * @param \Drupal\Core\Render\ElementInfoManagerInterface $formElementManager
+   *   The form element manager.
+   * @param \Drupal\Core\State\State $state
+   *   The state service.
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
+   *   The config factory.
+   * @param \Drupal\Core\Entity\EntityTypeManager $entityTypeManager
+   *   The entity type manager.
+   * @param \Drupal\Core\Extension\ModuleHandler $moduleHandler
+   *   The module handler.
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, LanguageManagerInterface $languageManager, ElementInfoManagerInterface $formElementManager, State $state, ConfigFactoryInterface $configFactory, EntityTypeManager $entityTypeManager, ModuleHandler $moduleHandler) {
     if (!in_array($plugin_definition['storage'], ['status', 'config'])) {
       \Drupal::logger('site_config')
         ->error('The "storage" value must be one of the followings: status, config.');
@@ -65,6 +102,9 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
     $this->moduleHandler = $moduleHandler;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     return new static(
       $configuration,
@@ -80,7 +120,10 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
   }
 
   /**
+   * Checks if the plugin is translatable.
+   *
    * @return bool
+   *   TRUE if translatable, FALSE otherwise.
    */
   private function isTranslatable(): bool {
     return $this->pluginDefinition['translatable'];
@@ -90,6 +133,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
    * Get the config key.
    *
    * @return string
+   *   The config key.
    */
   private function getConfigKey() {
     if ($this->isTranslatable()) {
@@ -125,8 +169,10 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
     foreach ($this->pluginDefinition['fields'] as $fieldName => $fieldData) {
       // Add '#' to all keys of $data to make it a form element.
       $fieldset[$fieldName] = $this->getArrayFormElement($fieldData);
-      // Check if $data['#label'] is set, if not, use $data['#title'], if not use 'Value'.
-      $fieldset[$fieldName]['#title'] = $fieldset[$fieldName]['#label'] ?? $fieldset[$fieldName]['#title'] ?? t('Value');
+      // Check if $data['#label'] is set, if not, use $data['#title'],
+      // if not use 'Value'.
+      $fieldset[$fieldName]['#title'] = $fieldset[$fieldName]['#label']
+        ?? $fieldset[$fieldName]['#title'] ?? $this->t('Value');
 
       $fieldset[$fieldName]['#default_value'] = $this->getValue($fieldName);
 
@@ -134,7 +180,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
         continue;
       }
       if ($fieldset[$fieldName]['#type'] == 'select') {
-        $fieldset[$fieldName]['#empty_option'] = t('- Select -');
+        $fieldset[$fieldName]['#empty_option'] = $this->t('- Select -');
         $fieldset[$fieldName]['#options'] = $fieldData['options'] ?? $this->getOptions($fieldName);
       }
       elseif ($fieldset[$fieldName]['#type'] == 'entity_autocomplete') {
@@ -152,8 +198,9 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
           $data = $this->getArrayFormElement($data);
           $data['#type'] = $data['#type'] ?? 'textfield';
 
-          // Check if $data['#label'] is set, if not, use $data['#title'], if not use 'Value'.
-          $data['#title'] = $data['#label'] ?? $data['#title'] ?? t('Value');
+          // Check if $data['#label'] is set, if not, use $data['#title'],
+          // if not use 'Value'.
+          $data['#title'] = $data['#label'] ?? $data['#title'] ?? $this->t('Value');
 
           // Set field form element.
           $fieldset[$fieldName][$key] = $data;
@@ -179,6 +226,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
       case 'status':
         $value = $this->state->get("{$key}.{$field}");
         break;
+
       case 'config':
         $value = $this->configFactory->get($key)->get($field);
         break;
@@ -195,8 +243,8 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
             }
           }
         }
-        catch (InvalidPluginDefinitionException|PluginNotFoundException $e) {
-          \Drupal::logger('site_config')->error($e->getMessage());
+        catch (InvalidPluginDefinitionException | PluginNotFoundException $e) {
+          \Drupal::logger('site_config')->error('Site config error: @message', ['@message' => $e->getMessage()]);
         }
       }
 
@@ -207,7 +255,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
           foreach ($value_array as $fieldName => $value_config) {
             if (isset($fields[$fieldName]['type']) &&  $fields[$fieldName]['type'] == 'entity_autocomplete') {
               try {
-                $entity = $this->entityTypeManager->getStorage($fields[$fieldName]['target_type'] ?? 'node')->load($value_array[$fieldName]) ;
+                $entity = $this->entityTypeManager->getStorage($fields[$fieldName]['target_type'] ?? 'node')->load($value_array[$fieldName]);
                 if ($entity instanceof ContentEntityBase) {
                   $value[$key][$fieldName] = $entity;
                   if ($entity->hasTranslation($langCode)) {
@@ -215,8 +263,8 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
                   }
                 }
               }
-              catch (InvalidPluginDefinitionException|PluginNotFoundException $e) {
-                \Drupal::logger('site_config')->error($e->getMessage());
+              catch (InvalidPluginDefinitionException | PluginNotFoundException $e) {
+                \Drupal::logger('site_config')->error('Site config error: @message', ['@message' => $e->getMessage()]);
               }
             }
           }
@@ -226,7 +274,6 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
 
     return $value;
   }
-
 
   /**
    * {@inheritdoc}
@@ -238,6 +285,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
       case 'status':
         $this->state->set("{$key}.{$field}", $value);
         break;
+
       case 'config':
         $this->configFactory->getEditable($key)->set($field, $value)->save();
         break;
@@ -272,7 +320,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
   /**
    * {@inheritdoc}
    */
-  function getOptions($fieldName): array {
+  public function getOptions($fieldName): array {
     return [];
   }
 

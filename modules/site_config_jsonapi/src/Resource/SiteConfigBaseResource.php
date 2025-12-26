@@ -2,15 +2,12 @@
 
 namespace Drupal\site_config_jsonapi\Resource;
 
-use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityMalformedException;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\file\Entity\File;
-use Drupal\jsonapi\JsonApiResource\LinkCollection;
-use Drupal\jsonapi\JsonApiResource\ResourceObject;
-use Drupal\jsonapi\JsonApiResource\ResourceObjectData;
 use Drupal\jsonapi\ResourceResponse;
 use Drupal\jsonapi\ResourceType\ResourceType;
 use Drupal\jsonapi_resources\Resource\ResourceBase;
@@ -28,30 +25,50 @@ use Symfony\Component\Routing\Route;
 abstract class SiteConfigBaseResource extends ResourceBase implements ContainerInjectionInterface {
 
   /**
-   * @var SiteConfigService
+   * The site config service.
+   *
+   * @var \Drupal\site_config\Service\SiteConfigService
    */
   protected SiteConfigService $siteConfigService;
 
   /**
+   * The site config plugin manager.
+   *
    * @var \Drupal\site_config\SiteConfigPluginManager
    */
   protected SiteConfigPluginManager $siteConfigManager;
 
   /**
+   * The entity type manager.
+   *
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected EntityTypeManagerInterface $entityTypeManager;
 
   /**
+   * The logger channel factory.
+   *
+   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
+   */
+  protected LoggerChannelFactoryInterface $loggerFactory;
+
+  /**
    * Constructs a new EntityResourceBase object.
    *
    * @param \Drupal\site_config\Service\SiteConfigService $siteConfigService
+   *   The site config service.
    * @param \Drupal\site_config\SiteConfigPluginManager $siteConfigManager
+   *   The site config plugin manager.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
+   *   The entity type manager.
+   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $loggerFactory
+   *   The logger channel factory.
    */
-  public function __construct(SiteConfigService $siteConfigService, SiteConfigPluginManager $siteConfigManager, EntityTypeManagerInterface $entityTypeManager) {
+  public function __construct(SiteConfigService $siteConfigService, SiteConfigPluginManager $siteConfigManager, EntityTypeManagerInterface $entityTypeManager, LoggerChannelFactoryInterface $loggerFactory) {
     $this->siteConfigService = $siteConfigService;
     $this->siteConfigManager = $siteConfigManager;
     $this->entityTypeManager = $entityTypeManager;
+    $this->loggerFactory = $loggerFactory;
   }
 
   /**
@@ -62,6 +79,7 @@ abstract class SiteConfigBaseResource extends ResourceBase implements ContainerI
       $container->get('site_config.service'),
       $container->get('plugin.manager.site_config'),
       $container->get('entity_type.manager'),
+      $container->get('logger.factory'),
     );
   }
 
@@ -79,7 +97,7 @@ abstract class SiteConfigBaseResource extends ResourceBase implements ContainerI
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public abstract function process(Request $request, array $resource_types): ResourceResponse;
+  abstract public function process(Request $request, array $resource_types): ResourceResponse;
 
   /**
    * {@inheritdoc}
@@ -93,8 +111,10 @@ abstract class SiteConfigBaseResource extends ResourceBase implements ContainerI
    * Format values.
    *
    * @param array $values
+   *   The values to format.
    *
    * @return array
+   *   The formatted values.
    */
   protected function formatValues(array $values): array {
     foreach ($values as &$value) {
@@ -107,11 +127,13 @@ abstract class SiteConfigBaseResource extends ResourceBase implements ContainerI
             }
           }
           break;
+
         case 'entity_autocomplete':
           if ($value['value'] instanceof EntityInterface) {
             $value = $this->getFormatEntityValues($value['value']);
           }
           break;
+
         case 'multivalue':
           if (isset($value['fields'])) {
             foreach ($value['fields'] as $key => $field) {
@@ -121,7 +143,8 @@ abstract class SiteConfigBaseResource extends ResourceBase implements ContainerI
                     $value['value'][$numeric_key][$key] = $this->getFormatEntityValues($field_value[$key]);
                   }
                 }
-              }else if ($field['type'] == 'managed_file') {
+              }
+              elseif ($field['type'] == 'managed_file') {
                 foreach ($value['value'] as $numeric_key => $field_value) {
                   $file = $this->entityTypeManager->getStorage('file')->load(reset($field_value[$key]));
                   if ($file instanceof EntityInterface) {
@@ -136,7 +159,7 @@ abstract class SiteConfigBaseResource extends ResourceBase implements ContainerI
     }
 
     // Remove field_type and value, and just return the value on each field.
-    $values = array_map(function($field) {
+    $values = array_map(function ($field) {
       return $field['value'] ?? $field;
     }, $values);
 
@@ -146,13 +169,15 @@ abstract class SiteConfigBaseResource extends ResourceBase implements ContainerI
   /**
    * Format values.
    *
-   * @param array $values
+   * @param \Drupal\Core\Entity\EntityInterface $entity
+   *   The entity to format.
    *
    * @return array
+   *   The formatted entity values.
    */
-  public function getFormatEntityValues($entity): array {
+  public function getFormatEntityValues(EntityInterface $entity): array {
     try {
-      $entity = [
+      $entity_values = [
         'type' => implode('--', [
           $entity->getEntityTypeId(),
           $entity->bundle(),
@@ -163,12 +188,11 @@ abstract class SiteConfigBaseResource extends ResourceBase implements ContainerI
       ];
     }
     catch (EntityMalformedException $e) {
-      \Drupal::logger('site_config')->error($e->getMessage());
+      $this->loggerFactory->get('site_config')->error('Site config error: @message', ['@message' => $e->getMessage()]);
       return [];
     }
 
-    return $entity;
+    return $entity_values;
   }
 
 }
-
