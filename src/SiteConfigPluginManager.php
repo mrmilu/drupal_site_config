@@ -22,12 +22,17 @@ class SiteConfigPluginManager extends DefaultPluginManager {
    * @param \Drupal\Core\Extension\ModuleHandlerInterface $module_handler
    *   The module handler to invoke the alter hook with.
    */
-  public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
+  public function __construct(
+    \Traversable $namespaces,
+    protected CacheBackendInterface $cache_backend,
+    protected ModuleHandlerInterface $module_handler,
+  ) {
     parent::__construct(
       'Plugin/SiteConfig',
       $namespaces,
       $module_handler,
       'Drupal\site_config\SiteConfigInterface',
+      'Drupal\site_config\Attribute\SiteConfig',
       'Drupal\site_config\Annotation\SiteConfig'
     );
     $this->alterInfo('site_config_info');

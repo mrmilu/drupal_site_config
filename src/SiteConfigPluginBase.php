@@ -8,12 +8,13 @@ use Drupal\Component\Plugin\Exception\PluginNotFoundException;
 use Drupal\Component\Plugin\PluginBase;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Entity\ContentEntityBase;
-use Drupal\Core\Entity\EntityTypeManager;
-use Drupal\Core\Extension\ModuleHandler;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Drupal\Core\State\StateInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Render\ElementInfoManagerInterface;
-use Drupal\Core\State\State;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -22,48 +23,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInterface, ContainerFactoryPluginInterface {
 
   use StringTranslationTrait;
-
-  /**
-   * The form element manager.
-   *
-   * @var \Drupal\Core\Render\ElementInfoManagerInterface
-   */
-  protected ElementInfoManagerInterface $formElementManager;
-
-  /**
-   * The language manager.
-   *
-   * @var \Drupal\Core\Language\LanguageManagerInterface
-   */
-  protected LanguageManagerInterface $languageManager;
-
-  /**
-   * The state service.
-   *
-   * @var \Drupal\Core\State\State
-   */
-  protected State $state;
-
-  /**
-   * The entity type manager.
-   *
-   * @var \Drupal\Core\Entity\EntityTypeManager
-   */
-  protected EntityTypeManager $entityTypeManager;
-
-  /**
-   * The module handler.
-   *
-   * @var \Drupal\Core\Extension\ModuleHandler
-   */
-  protected ModuleHandler $moduleHandler;
-
-  /**
-   * The config factory.
-   *
-   * @var \Drupal\Core\Config\ConfigFactoryInterface
-   */
-  protected ConfigFactoryInterface $configFactory;
 
   /**
    * Constructs a new SiteConfigPluginBase object.
@@ -78,28 +37,35 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
    *   The language manager.
    * @param \Drupal\Core\Render\ElementInfoManagerInterface $formElementManager
    *   The form element manager.
-   * @param \Drupal\Core\State\State $state
+   * @param \Drupal\Core\State\StateInterface $state
    *   The state service.
    * @param \Drupal\Core\Config\ConfigFactoryInterface $configFactory
    *   The config factory.
-   * @param \Drupal\Core\Entity\EntityTypeManager $entityTypeManager
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    *   The entity type manager.
-   * @param \Drupal\Core\Extension\ModuleHandler $moduleHandler
+   * @param \Drupal\Core\Extension\ModuleHandlerInterface $moduleHandler
    *   The module handler.
+   * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $loggerFactory
+   *   The logger factory.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, LanguageManagerInterface $languageManager, ElementInfoManagerInterface $formElementManager, State $state, ConfigFactoryInterface $configFactory, EntityTypeManager $entityTypeManager, ModuleHandler $moduleHandler) {
-    if (!in_array($plugin_definition['storage'], ['status', 'config'])) {
-      \Drupal::logger('site_config')
-        ->error('The "storage" value must be one of the followings: status, config.');
+  public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
+    protected LanguageManagerInterface $languageManager,
+    protected ElementInfoManagerInterface $formElementManager,
+    protected StateInterface $state,
+    protected ConfigFactoryInterface $configFactory,
+    protected EntityTypeManagerInterface $entityTypeManager,
+    protected ModuleHandlerInterface $moduleHandler,
+    protected LoggerChannelFactoryInterface $loggerFactory,
+  ) {
+    if (!in_array($plugin_definition['storage'], ['status', 'state', 'config'])) {
+      $this->loggerFactory->get('site_config')
+        ->error('The "storage" value must be one of the followings: state, config.');
       return;
     }
     parent::__construct($configuration, $plugin_id, $plugin_definition);
-    $this->languageManager = $languageManager;
-    $this->formElementManager = $formElementManager;
-    $this->state = $state;
-    $this->configFactory = $configFactory;
-    $this->entityTypeManager = $entityTypeManager;
-    $this->moduleHandler = $moduleHandler;
   }
 
   /**
@@ -116,6 +82,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
       $container->get('config.factory'),
       $container->get('entity_type.manager'),
       $container->get('module_handler'),
+      $container->get('logger.factory'),
     );
   }
 
@@ -224,6 +191,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
 
     switch ($this->pluginDefinition['storage']) {
       case 'status':
+      case 'state':
         $value = $this->state->get("{$key}.{$field}");
         break;
 
@@ -244,7 +212,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
           }
         }
         catch (InvalidPluginDefinitionException | PluginNotFoundException $e) {
-          \Drupal::logger('site_config')->error('Site config error: @message', ['@message' => $e->getMessage()]);
+          $this->loggerFactory->get('site_config')->error('Site config error: @message', ['@message' => $e->getMessage()]);
         }
       }
 
@@ -264,7 +232,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
                 }
               }
               catch (InvalidPluginDefinitionException | PluginNotFoundException $e) {
-                \Drupal::logger('site_config')->error('Site config error: @message', ['@message' => $e->getMessage()]);
+                $this->loggerFactory->get('site_config')->error('Site config error: @message', ['@message' => $e->getMessage()]);
               }
             }
           }
@@ -283,6 +251,7 @@ abstract class SiteConfigPluginBase extends PluginBase implements SiteConfigInte
 
     switch ($this->pluginDefinition['storage']) {
       case 'status':
+      case 'state':
         $this->state->set("{$key}.{$field}", $value);
         break;
 

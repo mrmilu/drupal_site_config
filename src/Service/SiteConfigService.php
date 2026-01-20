@@ -12,20 +12,6 @@ use Drupal\site_config\SiteConfigPluginManager;
 class SiteConfigService {
 
   /**
-   * The site config plugin manager.
-   *
-   * @var \Drupal\site_config\SiteConfigPluginManager
-   */
-  protected SiteConfigPluginManager $siteConfigManager;
-
-  /**
-   * The logger factory.
-   *
-   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
-   */
-  protected LoggerChannelFactoryInterface $loggerFactory;
-
-  /**
    * Constructs a new SiteConfigService object.
    *
    * @param \Drupal\site_config\SiteConfigPluginManager $siteConfigManager
@@ -33,10 +19,10 @@ class SiteConfigService {
    * @param \Drupal\Core\Logger\LoggerChannelFactoryInterface $loggerFactory
    *   The logger factory.
    */
-  public function __construct(SiteConfigPluginManager $siteConfigManager, LoggerChannelFactoryInterface $loggerFactory) {
-    $this->siteConfigManager = $siteConfigManager;
-    $this->loggerFactory = $loggerFactory;
-  }
+  public function __construct(
+    protected SiteConfigPluginManager $siteConfigManager,
+    protected LoggerChannelFactoryInterface $loggerFactory,
+  ) {}
 
   /**
    * Get all config values.
@@ -87,7 +73,7 @@ class SiteConfigService {
   }
 
   /**
-   * Get value.
+   * Obtiene un valor de configuración por clave de sitio y campo.
    *
    * @param string $siteKey
    *   The site key.

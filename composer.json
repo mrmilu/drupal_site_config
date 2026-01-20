@@ -1,0 +1,28 @@
+{
+    "name": "drupal/site_config",
+    "description": "Provides functionality to manage the global site config.",
+    "type": "drupal-module",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Carlos Mella (carlosmp)",
+            "homepage": "https://www.drupal.org/u/carlosmp",
+            "role": "Maintainer"
+        },
+        {
+            "name": "Jaime Herencia (jherencia)",
+            "homepage": "https://www.drupal.org/u/jherencia",
+            "role": "Maintainer"
+        },
+        {
+            "name": "Palomera (pedroph)",
+            "homepage": "https://www.drupal.org/u/pedroph",
+            "role": "Maintainer"
+        },
+    ],
+    "homepage": "https://www.drupal.org/project/site_config",
+    "require": {
+        "php": ">=8.1",
+        "drupal/core": "^10.2 || ^11"
+    }
+}

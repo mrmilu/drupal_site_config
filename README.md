@@ -39,9 +39,44 @@ all the configuration elements defined by the active Site Config plugins.
 To create a new configuration set, you need to define a plugin in your custom
 module.
 
-### 1. Define the Plugin Annotation
+### 1. Define the Plugin using PHP Attributes (Recommended)
 
 Create a file in `src/Plugin/SiteConfig/YourPluginName.php`:
+
+```php
+<?php
+
+namespace Drupal\your_module\Plugin\SiteConfig;
+
+use Drupal\Core\StringTranslation\TranslatableMarkup;
+use Drupal\site_config\Attribute\SiteConfig;
+use Drupal\site_config\SiteConfigPluginBase;
+
+#[SiteConfig(
+  id: "custom_settings_attribute",
+  label: new TranslatableMarkup("Custom Settings attribute"),
+  fields: [
+    "welcome_message" => [
+      "type" => "textfield",
+      "title" => "Welcome Message",
+      "description" => "A message shown on the home page.",
+    ],
+    "featured_node" => [
+      "type" => "entity_autocomplete",
+      "target_type" => "node",
+      "title" => "Featured Content",
+    ],
+  ],
+  storage: "config",
+  translatable: true,
+)]
+class YourPluginName extends SiteConfigPluginBase {
+}
+```
+
+### 2. Define the Plugin using Annotations (Legacy)
+
+Although Attributes are recommended for Drupal 10.2+, Annotations are still supported:
 
 ```php
 <?php
@@ -76,11 +111,11 @@ class YourPluginName extends SiteConfigPluginBase {
 }
 ```
 
-### 2. Annotation Properties
+### 3. Plugin Properties
 
 - `id`: Unique identifier for the plugin.
 - `label`: Human-readable label for the configuration group.
-- `storage`: Either `config` (Configuration API) or `status` (State API).
+- `storage`: Either `config` (Configuration API) or `state` (State API).
 - `translatable`: Boolean indicating if the values should be stored per language.
 - `fields`: An array of form elements. Most standard Drupal Form API properties
   are supported.

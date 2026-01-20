@@ -44,11 +44,11 @@ class SiteConfig extends Plugin {
   public $fields = [];
 
   /**
-   * Storage type: could be 'config' or 'status'.
+   * Storage type: could be 'config' or 'state'.
    *
    * @var string
    */
-  public $storage = 'status';
+  public $storage = 'state';
 
   /**
    * Translation flag.
