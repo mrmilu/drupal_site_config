@@ -39,12 +39,13 @@ class SettingsForm extends ConfigFormBase {
    */
   public function __construct(
     ConfigFactoryInterface $config_factory,
-    protected TypedConfigManagerInterface $typedConfigManager,
+    TypedConfigManagerInterface $typedConfigManager,
     protected SiteConfigPluginManager $siteConfigManager,
     protected CacheTagsInvalidatorInterface $cacheTagsInvalidator,
     protected BlockManagerInterface $blockManager,
   ) {
     parent::__construct($config_factory, $typedConfigManager);
+    $this->typedConfigManager = $typedConfigManager;
     $this->pluginDefinitions = $this->siteConfigManager->getDefinitions();
   }
 
